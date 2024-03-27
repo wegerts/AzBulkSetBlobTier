@@ -109,13 +109,17 @@ namespace AzBulkSetBlobTier
                 {
                     _targetAccessTier = AccessTier.Cool;
                 }
+                else if (_config.TargetAccessTier.Equals("Cold", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    _targetAccessTier = AccessTier.Cold;
+                }
                 else if (_config.TargetAccessTier.Equals("Archive", StringComparison.InvariantCultureIgnoreCase))
                 {
                     _targetAccessTier = AccessTier.Archive;
                 }
                 else
                 {
-                    _logger.LogError($"Invalid Target Access Tier of {_config.TargetAccessTier} must be either Hot, Cool or Archive.");
+                    _logger.LogError($"Invalid Target Access Tier of {_config.TargetAccessTier} must be either Hot, Cool, Cold or Archive.");
                     _configValid = false;
                 }
 
@@ -130,13 +134,17 @@ namespace AzBulkSetBlobTier
                 {
                     _sourceAccessTier = AccessTier.Cool;
                 }
+                else if (_config.SourceAccessTier.Equals("Cold", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    _sourceAccessTier = AccessTier.Cold;
+                }
                 else if (_config.SourceAccessTier.Equals("Archive", StringComparison.InvariantCultureIgnoreCase))
                 {
                     _sourceAccessTier = AccessTier.Archive;
                 }
                 else
                 {
-                    _logger.LogError($"Invalid Source Access Tier of {_config.SourceAccessTier} must be either Hot, Cool or Archive.");
+                    _logger.LogError($"Invalid Source Access Tier of {_config.SourceAccessTier} must be either Hot, Cool, Cold or Archive.");
                     _configValid = false;
                 }
 
