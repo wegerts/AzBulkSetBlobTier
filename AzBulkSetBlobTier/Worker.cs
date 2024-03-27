@@ -28,12 +28,16 @@ namespace AzBulkSetBlobTier
         private long _blobHotBytes;
         private long _blobCoolCount;
         private long _blobCoolBytes;
+        private long _blobColdCount;
+        private long _blobColdBytes;
         private long _blobArchiveCount;
         private long _blobArchiveBytes;
         private long _blobArchiveToHotCount;
         private long _blobArchiveToHotBytes;
         private long _blobArchiveToCoolCount;
         private long _blobArchiveToCoolBytes;
+        private long _blobArchiveToColdCount;
+        private long _blobArchiveToColdBytes;
         private AccessTier _targetAccessTier;
         private AccessTier _sourceAccessTier;
         private bool _configValid = true;
@@ -223,12 +227,16 @@ namespace AzBulkSetBlobTier
                 op.Telemetry.Metrics.Add("Hot Bytes", _blobHotBytes);
                 op.Telemetry.Metrics.Add("Cool Blobs", _blobCoolCount);
                 op.Telemetry.Metrics.Add("Cool Bytes", _blobCoolBytes);
+                op.Telemetry.Metrics.Add("Cold Blobs", _blobColdCount);
+                op.Telemetry.Metrics.Add("Cold Bytes", _blobColdBytes);
                 op.Telemetry.Metrics.Add("Archive Blobs", _blobArchiveCount);
                 op.Telemetry.Metrics.Add("Archive Bytes", _blobArchiveBytes);
                 op.Telemetry.Metrics.Add("Archive To Hot Blobs", _blobArchiveToHotCount);
                 op.Telemetry.Metrics.Add("Archive To Hot Bytes", _blobArchiveToHotBytes);
                 op.Telemetry.Metrics.Add("Archive To Cool Blobs", _blobArchiveToCoolCount);
                 op.Telemetry.Metrics.Add("Archive To Cool Bytes", _blobArchiveToCoolBytes);
+                op.Telemetry.Metrics.Add("Archive To Cold Blobs", _blobArchiveToColdCount);
+                op.Telemetry.Metrics.Add("Archive To Cold Bytes", _blobArchiveToColdBytes);
             }
         }
 
@@ -240,9 +248,11 @@ namespace AzBulkSetBlobTier
             _logger.LogInformation($"Blobs: {_blobCount:N0} in {BytesToTiB(_blobBytes):N2} TiB");
             _logger.LogInformation($"Hot Blobs: {_blobHotCount:N0} in {BytesToTiB(_blobHotBytes):N2} TiB");
             _logger.LogInformation($"Cool Blobs: {_blobCoolCount:N0} in {BytesToTiB(_blobCoolBytes):N2} TiB");
+            _logger.LogInformation($"Cold Blobs: {_blobColdCount:N0} in {BytesToTiB(_blobColdBytes):N2} TiB");
             _logger.LogInformation($"Archive Blobs: {_blobArchiveCount:N0} in {BytesToTiB(_blobArchiveBytes):N2} TiB");
             _logger.LogInformation($"Archive To Hot Blobs: {_blobArchiveToHotCount:N0} in {BytesToTiB(_blobArchiveToHotBytes):N2} TiB");
             _logger.LogInformation($"Archive To Cool Blobs: {_blobArchiveToCoolCount:N0} in {BytesToTiB(_blobArchiveToCoolBytes):N2} TiB");
+            _logger.LogInformation($"Archive To Cold Blobs: {_blobArchiveToColdCount:N0} in {BytesToTiB(_blobArchiveToColdBytes):N2} TiB");
         }
 
         /// <summary>
@@ -313,6 +323,17 @@ namespace AzBulkSetBlobTier
                                 }
                             }
 
+                            //Cold Blob
+                            else if (AccessTier.Cold.Equals(item.Blob.Properties.AccessTier))
+                            {
+                                InterlockedAdd(ref _blobColdCount, ref _blobColdBytes, item);
+
+                                if (_sourceAccessTier.Equals(AccessTier.Cold))
+                                {
+                                    uris.Push(blobContainerClient.GetBlobClient(item.Blob.Name).Uri);
+                                }
+                            }
+
                             //Archive Blob
                             else if (AccessTier.Archive.Equals(item.Blob.Properties.AccessTier))
                             {
@@ -327,6 +348,10 @@ namespace AzBulkSetBlobTier
                                     else if (item.Blob.Properties.ArchiveStatus.Value == ArchiveStatus.RehydratePendingToCool)
                                     {
                                         InterlockedAdd(ref _blobArchiveToCoolCount, ref _blobArchiveToCoolBytes, item);
+                                    }
+                                    else if (item.Blob.Properties.ArchiveStatus.Value == ArchiveStatus.RehydratePendingToCold)
+                                    {
+                                        InterlockedAdd(ref _blobArchiveToColdCount, ref _blobArchiveToColdBytes, item);
                                     }
                                 }
                                 else
